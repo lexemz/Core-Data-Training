@@ -12,12 +12,13 @@ class StorageManager {
     static let shared = StorageManager()
     
     // MARK: - Core Data stack
+
     private let persistentContainer: NSPersistentContainer
     private let context: NSManagedObjectContext
     
     init() {
         let container = NSPersistentContainer(name: "CoreDataDemo")
-        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
+        container.loadPersistentStores(completionHandler: { _, error in
             if let error = error as NSError? {
                 fatalError("Unresolved error \(error), \(error.userInfo)")
             }
@@ -27,8 +28,8 @@ class StorageManager {
         context = container.viewContext
     }
     
-
     // MARK: - Core Data Saving support
+
     func saveContext() {
         let context = persistentContainer.viewContext
         if context.hasChanges {
@@ -41,6 +42,8 @@ class StorageManager {
         }
     }
     
+    // MARK: - Core Data - data manipulating
+
     func fetchData() -> [Task] {
         let fetchRequest = Task.fetchRequest()
         
