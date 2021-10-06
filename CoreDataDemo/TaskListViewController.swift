@@ -75,8 +75,8 @@ class TaskListViewController: UITableViewController {
     }
     
     private func save(_ taskName: String) {
-        storage.saveNewTask(taskName)
-        guard let lastSavedTask = storage.lastSavedTask else { return }
+        storage.saveNewObject(taskName)
+        guard let lastSavedTask = storage.lastSavedObject else { return }
         taskList.append(lastSavedTask)
         
         let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
@@ -98,6 +98,10 @@ extension TaskListViewController {
         content.text = task.title
         cell.contentConfiguration = content
         return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 }
 
@@ -125,7 +129,7 @@ extension TaskListViewController {
         let row = indexPath.row
         
         // deleting for database
-        storage.deleteTask(task: taskList[row])
+        storage.deleteObject(task: taskList[row])
         
         // deleting for array
         taskList.remove(at: row)
@@ -139,6 +143,9 @@ extension TaskListViewController {
     }
     
     private func editHandler(forRowWithIndexPath indexPath: IndexPath) {
+        
+        taskList[indexPath.row].title = "some new title"
+        storage.saveContext()
         // create new row
         // delete old row
         // insert new row on old row index

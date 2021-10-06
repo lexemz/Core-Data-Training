@@ -8,7 +8,7 @@
 import CoreData
 
 class StorageManager {
-    var lastSavedTask: Task? { fetchData().last }
+    var lastSavedObject: Task? { fetchData().last }
     static let shared = StorageManager()
     
     // MARK: - Core Data stack
@@ -25,6 +25,7 @@ class StorageManager {
         
         persistentContainer = container
         context = container.viewContext
+
     }
     
 
@@ -52,7 +53,7 @@ class StorageManager {
         return []
     }
     
-    func saveNewTask(_ taskName: String) {
+    func saveNewObject(_ taskName: String) {
         guard let entityDescription = NSEntityDescription.entity(forEntityName: "Task", in: context) else { return }
         guard let task = NSManagedObject(entity: entityDescription, insertInto: context) as? Task else { return }
         task.title = taskName
@@ -60,8 +61,12 @@ class StorageManager {
         saveContext()
     }
     
-    func deleteTask(task: Task) {
+    func deleteObject(task: Task) {
         context.delete(task)
         saveContext()
+    }
+    
+    func editObject(task: Task, completionHandler: () -> Void) {
+        
     }
 }
