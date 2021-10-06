@@ -8,26 +8,25 @@
 import CoreData
 
 class StorageManager {
+    var lastSavedTask: Task? { fetchData().last }
     static let shared = StorageManager()
     
-
+    // MARK: - Core Data stack
+    private let persistentContainer: NSPersistentContainer
+    private let context: NSManagedObjectContext
     
     init() {
-        
-    }
-    
-    // MARK: - Core Data stack
-    private var persistentContainer: NSPersistentContainer {
         let container = NSPersistentContainer(name: "CoreDataDemo")
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
                 fatalError("Unresolved error \(error), \(error.userInfo)")
             }
         })
-        return container
+        
+        persistentContainer = container
+        context = container.viewContext
     }
     
-    private var context: NSManagedObjectContext { persistentContainer.viewContext }
 
     // MARK: - Core Data Saving support
     func saveContext() {
@@ -42,7 +41,7 @@ class StorageManager {
         }
     }
     
-    func fetchData() -> [Task]? {
+    func fetchData() -> [Task] {
         let fetchRequest = Task.fetchRequest()
         
         do {
@@ -50,6 +49,19 @@ class StorageManager {
         } catch {
             print("Failed to fetch data", error)
         }
-        return nil
+        return []
+    }
+    
+    func saveNewTask(_ taskName: String) {
+        guard let entityDescription = NSEntityDescription.entity(forEntityName: "Task", in: context) else { return }
+        guard let task = NSManagedObject(entity: entityDescription, insertInto: context) as? Task else { return }
+        task.title = taskName
+        
+        saveContext()
+    }
+    
+    func deleteTask(task: Task) {
+        context.delete(task)
+        saveContext()
     }
 }

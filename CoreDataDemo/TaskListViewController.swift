@@ -5,7 +5,6 @@
 //  Created by Alexey Efimov on 04.10.2021.
 //
 
-import CoreData
 import UIKit
 
 protocol TaskViewControllerDelegate {
@@ -13,7 +12,7 @@ protocol TaskViewControllerDelegate {
 }
 
 class TaskListViewController: UITableViewController {
-    private let context = StorageManager.shared.persistentContainer.viewContext
+    private let storage = StorageManager.shared
     private let cellID = "task"
     private var taskList: [Task] = []
 
@@ -57,13 +56,7 @@ class TaskListViewController: UITableViewController {
     }
     
     private func fetchData() {
-        let fetchRequest = Task.fetchRequest()
-        
-        do {
-            taskList = try context.fetch(fetchRequest)
-        } catch {
-            print("Failed to fetch data", error)
-        }
+        taskList = storage.fetchData()
     }
     
     private func showAlert(with title: String, and message: String) {
@@ -81,45 +74,13 @@ class TaskListViewController: UITableViewController {
         present(alert, animated: true)
     }
     
-    private func funcShowEditAlert() {
-        
-    }
-    
-    private func deleteHandler(forRowWithIndexPath indexPath: IndexPath, withAnimation animation: Bool = true) {
-        taskList.remove(at: indexPath.row)
-        
-        if animation {
-            tableView.deleteRows(at: [indexPath], with: .automatic)
-        } else {
-            tableView.deleteRows(at: [indexPath], with: .none)
-        }
-        
-        // add deleting for database
-    }
-    
-    private func editHandler(forRowWithIndexPath indexPath: IndexPath) {
-        // create new row
-        // delete old row
-        // insert new row on old row index
-        print("edit pressed for \(indexPath.row) row")
-    }
-    
     private func save(_ taskName: String) {
-        guard let entityDescription = NSEntityDescription.entity(forEntityName: "Task", in: context) else { return }
-        guard let task = NSManagedObject(entity: entityDescription, insertInto: context) as? Task else { return }
-        task.title = taskName
-        taskList.append(task)
+        storage.saveNewTask(taskName)
+        guard let lastSavedTask = storage.lastSavedTask else { return }
+        taskList.append(lastSavedTask)
         
         let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
         tableView.insertRows(at: [cellIndex], with: .automatic)
-        
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch {
-                print(error)
-            }
-        }
     }
 }
 
@@ -158,6 +119,30 @@ extension TaskListViewController {
         if editingStyle == .delete {
             deleteHandler(forRowWithIndexPath: indexPath)
         }
+    }
+    
+    private func deleteHandler(forRowWithIndexPath indexPath: IndexPath, animation: Bool = true) {
+        let row = indexPath.row
+        
+        // deleting for database
+        storage.deleteTask(task: taskList[row])
+        
+        // deleting for array
+        taskList.remove(at: row)
+        
+        // deteting for tableview
+        if animation {
+            tableView.deleteRows(at: [indexPath], with: .automatic)
+        } else {
+            tableView.deleteRows(at: [indexPath], with: .none)
+        }
+    }
+    
+    private func editHandler(forRowWithIndexPath indexPath: IndexPath) {
+        // create new row
+        // delete old row
+        // insert new row on old row index
+        print("edit pressed for \(indexPath.row) row")
     }
 }
 
