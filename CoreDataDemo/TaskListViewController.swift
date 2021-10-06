@@ -7,10 +7,6 @@
 
 import UIKit
 
-protocol TaskViewControllerDelegate {
-    func reloadData()
-}
-
 class TaskListViewController: UITableViewController {
     private let storage = StorageManager.shared
     private let cellID = "task"
@@ -52,14 +48,17 @@ class TaskListViewController: UITableViewController {
     }
     
     @objc private func addNewTask() {
-        showAlert(with: "New Task", and: "What do you want to do?")
+        showAlertForAddingTask()
     }
     
     private func fetchData() {
         taskList = storage.fetchData()
     }
     
-    private func showAlert(with title: String, and message: String) {
+    private func showAlertForAddingTask() {
+        let title = "New Task"
+        let message = "What do you want to do?"
+        
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
             guard let task = alert.textFields?.first?.text, !task.isEmpty else { return }
@@ -81,6 +80,42 @@ class TaskListViewController: UITableViewController {
         
         let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
         tableView.insertRows(at: [cellIndex], with: .automatic)
+    }
+    
+    private func showAlertForEditingTask(indexPath: IndexPath) {
+        let title = "Edit Task"
+        let message = "What do you want to do?"
+        
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        let editAction = UIAlertAction(title: "Edit", style: .default) { _ in
+            guard let task = alert.textFields?.first?.text, !task.isEmpty else { return }
+            self.edit(task, indexPath: indexPath)
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
+        alert.addAction(editAction)
+        alert.addAction(cancelAction)
+        alert.addTextField { textField in
+            textField.text = self.taskList[indexPath.row].title
+        }
+        present(alert, animated: true)
+    }
+    
+    private func edit(_ taskName: String, indexPath: IndexPath) {
+        storage.editObject(task: taskList[indexPath.row], newTaskName: taskName)
+        tableView.reloadRows(at: [indexPath], with: .automatic)
+    }
+    
+    private func delete(forRowWithIndexPath indexPath: IndexPath) {
+        let row = indexPath.row
+        
+        // deleting for database
+        storage.deleteObject(taskList[row])
+        
+        // deleting for array
+        taskList.remove(at: row)
+        
+        // deteting for tableview
+        tableView.deleteRows(at: [indexPath], with: .automatic)
     }
 }
 
@@ -111,7 +146,7 @@ extension TaskListViewController {
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let editAction = UIContextualAction(style: .normal, title: "Edit") { _, _, completionHandler in
 
-            self.editHandler(forRowWithIndexPath: indexPath)
+            self.showAlertForEditingTask(indexPath: indexPath)
             completionHandler(true)
         }
         editAction.backgroundColor = .systemOrange
@@ -121,43 +156,14 @@ extension TaskListViewController {
     
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            deleteHandler(forRowWithIndexPath: indexPath)
-        }
-    }
-    
-    private func deleteHandler(forRowWithIndexPath indexPath: IndexPath, animation: Bool = true) {
-        let row = indexPath.row
-        
-        // deleting for database
-        storage.deleteObject(task: taskList[row])
-        
-        // deleting for array
-        taskList.remove(at: row)
-        
-        // deteting for tableview
-        if animation {
-            tableView.deleteRows(at: [indexPath], with: .automatic)
-        } else {
-            tableView.deleteRows(at: [indexPath], with: .none)
+            delete(forRowWithIndexPath: indexPath)
         }
     }
     
     private func editHandler(forRowWithIndexPath indexPath: IndexPath) {
-        
-        taskList[indexPath.row].title = "some new title"
-        storage.saveContext()
-        // create new row
-        // delete old row
-        // insert new row on old row index
+        storage.editObject(task: taskList[indexPath.row], newTaskName: "ABOBA")
+        tableView.reloadRows(at: [indexPath], with: .automatic)
+
         print("edit pressed for \(indexPath.row) row")
-    }
-}
-
-// MARK: - TaskViewControllerDelegate
-
-extension TaskListViewController: TaskViewControllerDelegate {
-    func reloadData() {
-        fetchData()
-        tableView.reloadData()
     }
 }
