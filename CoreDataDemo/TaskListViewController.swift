@@ -73,15 +73,6 @@ class TaskListViewController: UITableViewController {
         present(alert, animated: true)
     }
     
-    private func save(_ taskName: String) {
-        storage.saveNewObject(taskName)
-        guard let lastSavedTask = storage.lastSavedObject else { return }
-        taskList.append(lastSavedTask)
-        
-        let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
-        tableView.insertRows(at: [cellIndex], with: .automatic)
-    }
-    
     private func showAlertForEditingTask(indexPath: IndexPath) {
         let title = "Edit Task"
         let message = "What do you want to do?"
@@ -100,21 +91,28 @@ class TaskListViewController: UITableViewController {
         present(alert, animated: true)
     }
     
-    private func edit(_ taskName: String, indexPath: IndexPath) {
-        storage.editObject(task: taskList[indexPath.row], newTaskName: taskName)
+    private func save(_ taskName: String) {
+        storage.saveNewObject(taskName)
+        guard let lastSavedTask = storage.lastSavedObject else { return }
+        taskList.append(lastSavedTask)
+        
+        let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
+        tableView.insertRows(at: [cellIndex], with: .automatic)
+    }
+    
+    private func edit(_ newTaskName: String, indexPath: IndexPath) {
+        storage.editObject(task: taskList[indexPath.row], newTaskName: newTaskName)
         tableView.reloadRows(at: [indexPath], with: .automatic)
     }
     
     private func delete(forRowWithIndexPath indexPath: IndexPath) {
         let row = indexPath.row
         
-        // deleting for database
+        // deleting from database
         storage.deleteObject(taskList[row])
-        
-        // deleting for array
+        // deleting from taskList
         taskList.remove(at: row)
-        
-        // deteting for tableview
+        // deteting from tableview rows
         tableView.deleteRows(at: [indexPath], with: .automatic)
     }
 }
@@ -158,12 +156,5 @@ extension TaskListViewController {
         if editingStyle == .delete {
             delete(forRowWithIndexPath: indexPath)
         }
-    }
-    
-    private func editHandler(forRowWithIndexPath indexPath: IndexPath) {
-        storage.editObject(task: taskList[indexPath.row], newTaskName: "ABOBA")
-        tableView.reloadRows(at: [indexPath], with: .automatic)
-
-        print("edit pressed for \(indexPath.row) row")
     }
 }
