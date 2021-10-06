@@ -5,8 +5,8 @@
 //  Created by Alexey Efimov on 04.10.2021.
 //
 
-import UIKit
 import CoreData
+import UIKit
 
 protocol TaskViewControllerDelegate {
     func reloadData()
@@ -61,7 +61,7 @@ class TaskListViewController: UITableViewController {
         
         do {
             taskList = try context.fetch(fetchRequest)
-        } catch let error {
+        } catch {
             print("Failed to fetch data", error)
         }
     }
@@ -81,6 +81,29 @@ class TaskListViewController: UITableViewController {
         present(alert, animated: true)
     }
     
+    private func funcShowEditAlert() {
+        
+    }
+    
+    private func deleteHandler(forRowWithIndexPath indexPath: IndexPath, withAnimation animation: Bool = true) {
+        taskList.remove(at: indexPath.row)
+        
+        if animation {
+            tableView.deleteRows(at: [indexPath], with: .automatic)
+        } else {
+            tableView.deleteRows(at: [indexPath], with: .none)
+        }
+        
+        // add deleting for database
+    }
+    
+    private func editHandler(forRowWithIndexPath indexPath: IndexPath) {
+        // create new row
+        // delete old row
+        // insert new row on old row index
+        print("edit pressed for \(indexPath.row) row")
+    }
+    
     private func save(_ taskName: String) {
         guard let entityDescription = NSEntityDescription.entity(forEntityName: "Task", in: context) else { return }
         guard let task = NSManagedObject(entity: entityDescription, insertInto: context) as? Task else { return }
@@ -93,7 +116,7 @@ class TaskListViewController: UITableViewController {
         if context.hasChanges {
             do {
                 try context.save()
-            } catch let error {
+            } catch {
                 print(error)
             }
         }
@@ -101,6 +124,7 @@ class TaskListViewController: UITableViewController {
 }
 
 // MARK: - UITableViewDataSource
+
 extension TaskListViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         taskList.count
@@ -116,7 +140,29 @@ extension TaskListViewController {
     }
 }
 
+// MARK: - UITableViewDelegate
+
+extension TaskListViewController {
+    override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let editAction = UIContextualAction(style: .normal, title: "Edit") { _, _, completionHandler in
+
+            self.editHandler(forRowWithIndexPath: indexPath)
+            completionHandler(true)
+        }
+        editAction.backgroundColor = .systemOrange
+        
+        return UISwipeActionsConfiguration(actions: [editAction])
+    }
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            deleteHandler(forRowWithIndexPath: indexPath)
+        }
+    }
+}
+
 // MARK: - TaskViewControllerDelegate
+
 extension TaskListViewController: TaskViewControllerDelegate {
     func reloadData() {
         fetchData()
