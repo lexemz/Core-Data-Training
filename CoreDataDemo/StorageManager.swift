@@ -10,10 +10,14 @@ import CoreData
 class StorageManager {
     static let shared = StorageManager()
     
-    init() {}
+
+    
+    init() {
+        
+    }
     
     // MARK: - Core Data stack
-    var persistentContainer: NSPersistentContainer = {
+    private var persistentContainer: NSPersistentContainer {
         let container = NSPersistentContainer(name: "CoreDataDemo")
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
@@ -21,7 +25,9 @@ class StorageManager {
             }
         })
         return container
-    }()
+    }
+    
+    private var context: NSManagedObjectContext { persistentContainer.viewContext }
 
     // MARK: - Core Data Saving support
     func saveContext() {
@@ -34,5 +40,16 @@ class StorageManager {
                 fatalError("Unresolved error \(nserror), \(nserror.userInfo)")
             }
         }
+    }
+    
+    func fetchData() -> [Task]? {
+        let fetchRequest = Task.fetchRequest()
+        
+        do {
+            return try context.fetch(fetchRequest)
+        } catch {
+            print("Failed to fetch data", error)
+        }
+        return nil
     }
 }
